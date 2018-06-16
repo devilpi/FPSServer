@@ -118,7 +118,7 @@ function updatePos(socketID, status, position, rotation) {
     room.players[socketID].position = position;
     room.players[socketID].rotation = rotation;
     room.players[socketID].status = status;
-    player2object[socketID].position.set(position.x, position.y, position.z);
+    player2object[socketID].position.set(position.x, position.y + OFFSET, position.z);
     player2object[socketID].rotation.set(rotation._x, rotation._y, rotation._z);
 }
 
@@ -258,7 +258,6 @@ io.on('connection', function (socket) {
 
     socket.on('report-pos', function (socketID, status, position, rotation) {
         console.log('report pos: ' + socketID);
-        position.y += OFFSET;
         updatePos(socketID, status, position, rotation);
     });
 
@@ -297,4 +296,4 @@ var RUN = 2;
 var DEADTIME = 5000; // ms
 var STRONGTIME = 1000; // ms
 var OFFSET = 10.25;
-var INFINITY = 300;
+var INFINITY = 1000;
