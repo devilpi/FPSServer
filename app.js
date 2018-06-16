@@ -22,12 +22,11 @@ function makePlatform( jsonUrl, scene ) {
     
     model.geometry.computeFaceNormals();
 
+    model.geometry.scale(10, 10, 10);
+
     var platform = new THREE.Mesh( model.geometry );
 
     platform.name = 'platform';
-
-    platform.scale.set(10, 10, 10);
-    platform.updateMatrix();
 
     scene.add(platform);
 }
