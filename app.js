@@ -135,6 +135,7 @@ function updateShoot(socketID, position, direction) {
     
     var intersects = rayCaster.intersectObjects(scene.children);
     var shootID = -1;
+    var ret = INFINITY;
     for(var i = 0; i < intersects.length; i ++) {
         if(intersects[i].object.name == 'platform' ||
             intersects[i].object.name == socketID) continue;
@@ -143,6 +144,7 @@ function updateShoot(socketID, position, direction) {
             shootID = -1;
             continue;
         }
+        ret = intersects[i].distance;
         break;
     }
     console.log(shootID);
@@ -163,6 +165,7 @@ function updateShoot(socketID, position, direction) {
             updatePos(shootID, STOP, room.players[shootID].position, room.players[shootID].rotation);
         }
     }
+    return ret;
 }
 
 function addRoom(gameRoom) {
@@ -255,11 +258,16 @@ io.on('connection', function (socket) {
 
     socket.on('report-pos', function (socketID, status, position, rotation) {
         console.log('report pos: ' + socketID);
+        position.y += OFFSET;
         updatePos(socketID, status, position, rotation);
     });
 
     socket.on('report-shoot', function (socketID, position, direction) {
-        updateShoot(socketID, position, direction);
+        var ret = updateShoot(socketID, position, direction);
+        var room_id = player2room[socketID];
+        if(typeof room_id != 'undefined') {
+            io.to('room-' + room_id).emit('shoot-result', position, direction, ret);
+        }
     });
     
     socket.on('chat-message', function (socketID, msg) {
@@ -288,3 +296,5 @@ var STOP = 1;
 var RUN = 2;
 var DEADTIME = 5000; // ms
 var STRONGTIME = 1000; // ms
+var OFFSET = 10.25;
+var INFINITY = 300;
