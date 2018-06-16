@@ -10,7 +10,6 @@ var THREE = require('three');
 var rooms = {};
 var player2room = {};
 var player2object = {};
-var objects = [];
 
 function makePlatform( jsonUrl, scene, objects ) {
 
