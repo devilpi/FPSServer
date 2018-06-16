@@ -60,33 +60,25 @@ function initPlayer(gameRoom, socketID) {
     rooms[gameRoom].scene.add(object);
 }
 
-function addPlayer(socket, playerID, gameRoom) {
+function addPlayer(socketID, playerID, gameRoom) {
     console.log("new player enter the room: " + playerID);
 
     if(typeof rooms[gameRoom] == 'undefined') {
         initRoom(gameRoom);
     }
 
-    if(typeof rooms[gameRoom].players[socket.id] != 'undefined') {
-        return "玩家已存在";
+    if(typeof rooms[gameRoom].players[socketID] != 'undefined') {
+        quitPlayer(socketID);
     }
 
     if(rooms[gameRoom].curNum >= maxPlayer) {
         return "房间已满"
     }
 
-    rooms[gameRoom].players[socket.id] = {
-        id: playerID,
-        hp: maxLife,
-        kills: 0,
-        status: STOP,
-        deadtime: 0,
-        strongtime: STRONGTIME,
-        position: bornPlace[0].position,
-        rotation: bornPlace[0].rotation
-    };
+    rooms[gameRoom].players[socketID] = getNewPlayer(playerID);
 
-    initPlayer(gameRoom, socket.id);
+
+    initPlayer(gameRoom, socketID);
     
     socket.join('room-' + gameRoom);
 
@@ -110,14 +102,13 @@ function removePlayer(socketID) {
 
 function removeRoom(roomID) {
     if(typeof rooms[roomID] != 'undefined') {
-        player2room.forEach(function (room_id, socketID) {
-            if(room_id == roomID) {
-                removePlayer(socketID);
-            }
-        });
         delete rooms[roomID].scene;
         delete rooms[roomID];
     }
+}
+
+function quitPlayer(socketID) {
+    removePlayer(socketID);
 }
 
 function updatePos(socketID, status, position, rotation) {
@@ -129,8 +120,8 @@ function updatePos(socketID, status, position, rotation) {
     player2object[socketID].rotation.set(rotation._x, rotation._y, rotation._z);
 }
 
-function updateShoot(socket, position, direction) {
-    var room = rooms[player2room[socket.id]];
+function updateShoot(socketID, position, direction) {
+    var room = rooms[player2room[socketID]];
     var scene = room.scene;
     var pos = new THREE.Vector3(position.x, position.y, position.z);
     var dir = new THREE.Vector3(direction.x, direction.y, direction.z);
@@ -144,7 +135,7 @@ function updateShoot(socket, position, direction) {
     var shootID = -1;
     for(var i = 0; i < intersects.length; i ++) {
         if(intersects[i].object.name == 'platform' ||
-            intersects[i].object.name == socket.id) continue;
+            intersects[i].object.name == socketID) continue;
         shootID = intersects[i].object.name;
         if(room.players[shootID].deadtime > 0) {
             shootID = -1;
@@ -158,23 +149,15 @@ function updateShoot(socket, position, direction) {
             room.players[shootID].hp -= getNormalAttack();
         }
         if(room.players[shootID].hp <= 0) {
-            room.players[socket.id].kills ++;
-            room.players[socket.id].hp += killBonus;
-            if(room.players[socket.id].hp > maxLife) {
-                room.players[socket.id].hp = maxLife;
+            room.players[socketID].kills ++;
+            room.players[socketID].hp += killBonus;
+            if(room.players[socketID].hp > maxLife) {
+                room.players[socketID].hp = maxLife;
             }
             
             var playerID = room.players[shootID].id;
-            room.players[shootID] = {
-                id: playerID,
-                hp: maxLife,
-                kills: 0,
-                status: STOP,
-                deadtime: DEADTIME,
-                strongtime: STRONGTIME,
-                position: bornPlace[0].position,
-                rotation: bornPlace[0].rotation
-            };
+            room.players[shootID] = getNewPlayer(playerID);
+            room.players[shootID].deadtime = DEADTIME;
             updatePos(shootID, STOP, room.players[shootID].position, room.players[shootID].rotation);
         }
     }
@@ -189,6 +172,19 @@ function addRoom(gameRoom) {
     }
 
     return "房间已存在";
+}
+
+function getNewPlayer(playerID) {
+    return {
+        id: playerID,
+        hp: maxLife,
+        kills: 0,
+        status: STOP,
+        deadtime: 0,
+        strongtime: STRONGTIME,
+        position: bornPlace[0].position,
+        rotation: bornPlace[0].rotation
+    };
 }
 
 function getObject3d(position, rotation) {
@@ -221,8 +217,8 @@ setInterval(function () {
 io.on('connection', function (socket) {
     console.log("new connection from: " + socket.id);
     
-    socket.on('new-player', function (player_id, room_id) {
-        var ret = addPlayer(socket, player_id, room_id);
+    socket.on('new-player', function (socketID, player_id, room_id) {
+        var ret = addPlayer(socketID, player_id, room_id);
         socket.emit('new-player-result', ret);
         if(ret == '添加成功') {
             io.to('room-' + room_id).emit('new-comer', player_id);
@@ -235,9 +231,10 @@ io.on('connection', function (socket) {
     });
 
     socket.on('remove-room', function (room_id) {
-        removeRoom(room_id);
+        if(rooms[room_id].curNum <= 0) removeRoom(room_id);
     });
     
+    /*
     socket.on('disconnect', function () {
         console.log('quit before: ' + socket.id);
         var room_id = removePlayer(socket.id);
@@ -246,20 +243,21 @@ io.on('connection', function (socket) {
             io.to('room-' + room_id).emit('quit-player', socket.id);
         }
     });
+    */
 
-    socket.on('report-pos', function (status, position, rotation) {
-        console.log('report pos: ' + socket.id);
-        updatePos(socket.id, status, position, rotation);
+    socket.on('report-pos', function (socketID, status, position, rotation) {
+        console.log('report pos: ' + socketID);
+        updatePos(socketID, status, position, rotation);
     });
 
-    socket.on('report-shoot', function (position, direction) {
-        updateShoot(socket, position, direction);
+    socket.on('report-shoot', function (socketID, position, direction) {
+        updateShoot(socketID, position, direction);
     });
     
-    socket.on('chat-message', function (msg) {
-        var room_id = player2room[socket.id];
+    socket.on('chat-message', function (socketID, msg) {
+        var room_id = player2room[socketID];
         if(typeof room_id != 'undefined') {
-            io.to('room-' + room_id).emit('new-message', rooms[room_id].players[socket.id].id, msg);
+            io.to('room-' + room_id).emit('new-message', rooms[room_id].players[socketID].id, msg);
         }
     });
 });
