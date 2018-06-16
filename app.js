@@ -27,6 +27,7 @@ function makePlatform( jsonUrl, scene ) {
     platform.name = 'platform';
 
     platform.scale.set(10, 10, 10);
+    platform.updateMatrix();
 
     scene.add(platform);
 }
