@@ -10,8 +10,11 @@ var THREE = require('three');
 var rooms = {};
 var player2room = {};
 var player2object = {};
+var objects = [];
 
-function makePlatform( jsonUrl ) {
+function makePlatform( jsonUrl, scene, objects ) {
+
+    var placeholder = new THREE.Object3D();
 
     var loader = new THREE.JSONLoader();
 
@@ -25,16 +28,22 @@ function makePlatform( jsonUrl ) {
     var platform = new THREE.Mesh( model.geometry );
 
     platform.name = 'platform';
+    objects.push(platform);
 
-    return platform;
+    placeholder.add(platform);
+
+    var scale = 10;
+    placeholder.scale.x = scale;
+    placeholder.scale.y = scale;
+    placeholder.scale.z = scale;
+
+    scene.add(placeholder);
 }
 
-function initMap() {
-    var scene = new THREE.Scene();
-    scene.add( makePlatform(
-        'model/platform.json'
-    ));
-    return scene;
+function initMap(gameRoom) {
+    makePlatform('model/platform.json',
+        rooms[gameRoom].scene,
+        rooms[gameRoom].objects);
 }
 
 function getRandom(low, high) {
@@ -47,8 +56,10 @@ function initRoom(gameRoom) {
     rooms[gameRoom] = {
         players: {},
         curNum: 0,
-        scene: initMap()
+        objects: [],
+        scene: new THREE.Scene()
     };
+    initMap(gameRoom);
 }
 
 function initPlayer(gameRoom, socketID) {
@@ -58,6 +69,7 @@ function initPlayer(gameRoom, socketID) {
     player2object[socketID] = object;
     player2room[socketID] = gameRoom;
     rooms[gameRoom].scene.add(object);
+    rooms[gameRoom].objects.push(object);
     rooms[gameRoom].curNum ++;
 }
 
@@ -93,6 +105,7 @@ function removePlayer(socketID) {
         delete rooms[room_id].players[socketID];
         delete player2room[socketID];
         rooms[room_id].scene.remove(player2object[socketID]);
+        rooms[room_id].objects.remove(player2object[socketID]);
         delete player2object[socketID];
         rooms[room_id].curNum --;
     } else {
@@ -104,6 +117,7 @@ function removePlayer(socketID) {
 function removeRoom(roomID) {
     if(typeof rooms[roomID] != 'undefined') {
         delete rooms[roomID].scene;
+        delete rooms[roomID].objects;
         delete rooms[roomID];
     }
 }
@@ -124,16 +138,16 @@ function updatePos(socketID, status, position, rotation) {
 
 function updateShoot(socketID, position, direction) {
     var room = rooms[player2room[socketID]];
-    var scene = room.scene;
+    var objects = room.objects;
     var pos = new THREE.Vector3(position.x, position.y, position.z);
     var dir = new THREE.Vector3(direction.x, direction.y, direction.z);
     dir.normalize();
-    scene.children.forEach(function (mesh) {
+    objects.forEach(function (mesh) {
         mesh.updateMatrixWorld();
     });
     rayCaster.set(pos, dir);
     
-    var intersects = rayCaster.intersectObjects(scene.children);
+    var intersects = rayCaster.intersectObjects(objects);
     var shootID = -1;
     var ret = INFINITY;
     for(var i = 0; i < intersects.length; i ++) {
