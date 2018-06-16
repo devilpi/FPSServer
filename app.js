@@ -221,10 +221,11 @@ io.on('connection', function (socket) {
         var ret = addPlayer(socket, socketID, player_id, room_id);
         socket.emit('new-player-result', ret);
         if(ret == '添加成功') {
+            console.log('look ' + socketID);
             io.to('room-' + room_id).emit('new-comer', socketID);
-            for(var id in rooms[room_id].players) {
+            rooms[room_id].players.forEach(function (player, id) {
                 if(id != socketID) socket.emit('new-comer', id);
-            }
+            });
         }
     });
 
