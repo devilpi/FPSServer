@@ -58,6 +58,7 @@ function initPlayer(gameRoom, socketID) {
     player2object[socketID] = object;
     player2room[socketID] = gameRoom;
     rooms[gameRoom].scene.add(object);
+    rooms[gameRoom].curNum ++;
 }
 
 function addPlayer(socket, socketID, playerID, gameRoom) {
@@ -112,6 +113,7 @@ function quitPlayer(socketID) {
 }
 
 function updatePos(socketID, status, position, rotation) {
+    if(typeof player2room[socketID] == 'undefined') return;
     var room = rooms[player2room[socketID]];
     room.players[socketID].position = position;
     room.players[socketID].rotation = rotation;
@@ -201,14 +203,14 @@ function getNormalAttack() {
 
 setInterval(function () {
     rooms.forEach(function (room, room_id) {
-        room.players.forEach(function (player) {
-            if(player.deadtime > 0) {
-                player.deadtime -= 100;
-            } else if(player.strongtime > 0) {
-                player.strongtime -= 100;
-            }
-        });
         if(room.curNum > 0) {
+            room.players.forEach(function (player) {
+                if(player.deadtime > 0) {
+                    player.deadtime -= 100;
+                } else if(player.strongtime > 0) {
+                    player.strongtime -= 100;
+                }
+            });
             io.to('room-' + room_id).emit('syn-pos', room.players);
         }
     });
