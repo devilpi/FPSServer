@@ -310,3 +310,22 @@ var DEADTIME = 5000; // ms
 var STRONGTIME = 1000; // ms
 var OFFSET = 10.25;
 var INFINITY = 1000;
+
+Array.prototype.contains = function (val) {
+    for (i in this) {
+        if (this[i] == val) return true;
+    }
+    return false;
+};
+Array.prototype.indexOf = function(val) {
+    for (var i = 0; i < this.length; i++) {
+        if (this[i] == val) return i;
+    }
+    return -1;
+};
+Array.prototype.remove = function(val) {
+    var index = this.indexOf(val);
+    if (index > -1) {
+        this.splice(index, 1);
+    }
+};
