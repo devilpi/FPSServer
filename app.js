@@ -221,10 +221,13 @@ io.on('connection', function (socket) {
         var ret = addPlayer(socket, socketID, player_id, room_id);
         socket.emit('new-player-result', ret);
         if(ret == '添加成功') {
-            io.to('room-' + room_id).emit('new-comer', player_id);
+            io.to('room-' + room_id).emit('new-comer', socketID);
+            for(var id in rooms[room_id].players) {
+                if(id != socketID) socket.emit('new-comer', id);
+            }
         }
     });
-    
+
     socket.on('new-room', function (room_id) {
         var ret = addRoom(room_id);
         socket.emit('new-room-result', ret);
@@ -233,17 +236,17 @@ io.on('connection', function (socket) {
     socket.on('remove-room', function (room_id) {
         if(rooms[room_id].curNum <= 0) removeRoom(room_id);
     });
-    
+
     /*
-    socket.on('disconnect', function () {
-        console.log('quit before: ' + socket.id);
-        var room_id = removePlayer(socket.id);
-        if(room_id != -1) {
-            console.log('quit room: ' + room_id);
-            io.to('room-' + room_id).emit('quit-player', socket.id);
-        }
-    });
-    */
+     socket.on('disconnect', function () {
+     console.log('quit before: ' + socket.id);
+     var room_id = removePlayer(socket.id);
+     if(room_id != -1) {
+     console.log('quit room: ' + room_id);
+     io.to('room-' + room_id).emit('quit-player', socket.id);
+     }
+     });
+     */
 
     socket.on('report-pos', function (socketID, status, position, rotation) {
         console.log('report pos: ' + socketID);
