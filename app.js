@@ -60,7 +60,7 @@ function initPlayer(gameRoom, socketID) {
     rooms[gameRoom].scene.add(object);
 }
 
-function addPlayer(socketID, playerID, gameRoom) {
+function addPlayer(socket, socketID, playerID, gameRoom) {
     console.log("new player enter the room: " + playerID);
 
     if(typeof rooms[gameRoom] == 'undefined') {
@@ -218,7 +218,7 @@ io.on('connection', function (socket) {
     console.log("new connection from: " + socket.id);
     
     socket.on('new-player', function (socketID, player_id, room_id) {
-        var ret = addPlayer(socketID, player_id, room_id);
+        var ret = addPlayer(socket, socketID, player_id, room_id);
         socket.emit('new-player-result', ret);
         if(ret == '添加成功') {
             io.to('room-' + room_id).emit('new-comer', player_id);
@@ -256,6 +256,7 @@ io.on('connection', function (socket) {
     
     socket.on('chat-message', function (socketID, msg) {
         var room_id = player2room[socketID];
+        console.log("chat message: " + socketID + msg);
         if(typeof room_id != 'undefined') {
             io.to('room-' + room_id).emit('new-message', rooms[room_id].players[socketID].id, msg);
         }
@@ -269,7 +270,7 @@ var killBonus = 30;
 var bornPlace = [new THREE.Object3D(), new THREE.Object3D()];
 var normalAttack = 20;
 var randomRange = 3;
-var geometry = new THREE.BoxBufferGeometry(10, 10, 10);
+var geometry = new THREE.BoxBufferGeometry(6, 6, 20.5);
 var rayCaster = new THREE.Raycaster();
 
 module.exports = app;
