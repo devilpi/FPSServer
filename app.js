@@ -7,9 +7,9 @@ server.listen(3000);
 
 var THREE = require('three');
 
-var rooms = [];
-var player2room = [];
-var player2object = [];
+var rooms = {};
+var player2room = {};
+var player2object = {};
 
 function makePlatform( jsonUrl ) {
 
@@ -45,7 +45,7 @@ function getRandom(low, high) {
 
 function initRoom(gameRoom) {
     rooms[gameRoom] = {
-        players: [],
+        players: {},
         curNum: 0,
         scene: initMap()
     };
@@ -202,18 +202,20 @@ function getNormalAttack() {
 }
 
 setInterval(function () {
-    rooms.forEach(function (room, room_id) {
+    for(var room_id in rooms) {
+        var room = rooms[room_id];
         if(room.curNum > 0) {
-            room.players.forEach(function (player) {
+            for(var socketID in room.players) {
+                var player = room.players[socketID];
                 if(player.deadtime > 0) {
                     player.deadtime -= 100;
                 } else if(player.strongtime > 0) {
                     player.strongtime -= 100;
                 }
-            });
+            }
             io.to('room-' + room_id).emit('syn-pos', room.players);
         }
-    });
+    }
 }, 100);
 
 io.on('connection', function (socket) {
@@ -225,9 +227,9 @@ io.on('connection', function (socket) {
         if(ret == '添加成功') {
             console.log('look ' + socketID);
             io.to('room-' + room_id).emit('new-comer', socketID);
-            rooms[room_id].players.forEach(function (player, id) {
+            for(var id in rooms[room_id].players) {
                 if(id != socketID) socket.emit('new-comer', id);
-            });
+            }
         }
     });
 
