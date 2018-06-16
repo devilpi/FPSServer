@@ -255,6 +255,13 @@ io.on('connection', function (socket) {
     socket.on('report-shoot', function (position, direction) {
         updateShoot(socket, position, direction);
     });
+    
+    socket.on('chat-message', function (msg) {
+        var room_id = player2room[socket.id];
+        if(typeof room_id != 'undefined') {
+            io.to('room-' + room_id).emit('new-message', rooms[room_id].players[socket.id].id, msg);
+        }
+    });
 });
 
 // game configure
