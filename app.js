@@ -20,7 +20,6 @@ function makePlatform( jsonUrl, scene ) {
 
     var model = loader.parse( jsonContent );
     var geometry = model.geometry;
-    geometry.scale(10, 10, 10);
     geometry.verticesNeedUpdate = true;
     geometry.elementsNeedUpdate = true;
     geometry.morphTargetsNeedUpdate = true;
@@ -32,9 +31,11 @@ function makePlatform( jsonUrl, scene ) {
 
     var platform = new THREE.Mesh( geometry );
 
+    platform.geometry.scale(10, 10, 10);
     platform.name = 'platform';
     platform.matrixAutoUpdate = false;
     platform.updateMatrix();
+    console.log(platform.geometry.vertices);
 
     scene.add(platform);
 }
