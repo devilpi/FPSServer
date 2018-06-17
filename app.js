@@ -122,14 +122,31 @@ function quitPlayer(socketID) {
     removePlayer(socketID);
 }
 
-function updatePos(socketID, status, position, rotation) {
+function updatePos(socketID, position, rotation) {
     if(typeof player2room[socketID] == 'undefined') return;
     var room = rooms[player2room[socketID]];
     room.players[socketID].position = position;
     room.players[socketID].rotation = rotation;
-    room.players[socketID].status = status;
     player2object[socketID].position.set(position.x, position.y + OFFSET, position.z);
     player2object[socketID].rotation.set(rotation._x, rotation._y, rotation._z);
+}
+
+function updateStatus(socketID, run_forward,
+                      run_backward, run_left, run_right,
+                      jump_forward, jump_backward,
+                      fire, reload, die) {
+    if(typeof player2room[socketID] == 'undefined') return;
+    var room = rooms[player2room[socketID]];
+
+    room.players[socketID].playing_run_forward = run_forward;
+    room.players[socketID].playing_run_backward = run_backward;
+    room.players[socketID].playing_run_left = run_left;
+    room.players[socketID].playing_run_right = run_right;
+    room.players[socketID].playing_jump_forward = jump_forward;
+    room.players[socketID].playing_jump_backward = jump_backward;
+    room.players[socketID].playing_fire = fire;
+    room.players[socketID].playing_reload = reload;
+    room.players[socketID].playing_die = die;
 }
 
 function updateShoot(socketID, position, direction) {
@@ -297,8 +314,15 @@ io.on('connection', function (socket) {
      });
      */
 
-    socket.on('report-pos', function (socketID, status, position, rotation) {
-        updatePos(socketID, status, position, rotation);
+    socket.on('report-pos', function (socketID, run_forward,
+        run_backward, run_left, run_right,
+        jump_forward, jump_backward,
+        fire, reload, die, position, rotation) {
+        updatePos(socketID, position, rotation);
+        updateStatus(socketID, run_forward,
+            run_backward, run_left, run_right,
+            jump_forward, jump_backward,
+            fire, reload, die);
     });
 
     socket.on('report-shoot', function (socketID, position, direction) {
