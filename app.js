@@ -158,9 +158,8 @@ function updateShoot(socketID, position, direction) {
     if(shootID != 'platform' && shootID != -1) {
         if(room.players[shootID].strongtime <= 0) {
             room.players[shootID].hp -= getNormalAttack();
-            console.log('bullet: ' + point);
-            console.log('people: ' + room.players[shootID].position);
             if(point.y - room.players[shootID].position.y >= BODYSIZE) {
+                console.log('head shoot');
                 room.players[shootID].hp -= getNormalAttack();
             }
         }
@@ -207,7 +206,7 @@ function getNewPlayer(playerID) {
 function getObject3d(position, rotation) {
 
     var object = new THREE.Mesh(geometry);
-    object.position.set(position.x, position.y, position.z);
+    object.position.set(position.x, position.y + OFFSET, position.z);
     object.rotation.set(rotation._x, rotation._y, rotation._z);
     return object;
 }
@@ -269,7 +268,6 @@ io.on('connection', function (socket) {
      */
 
     socket.on('report-pos', function (socketID, status, position, rotation) {
-        console.log('report pos: ' + socketID);
         updatePos(socketID, status, position, rotation);
     });
 
@@ -297,7 +295,7 @@ var killBonus = 30;
 var bornPlace = [new THREE.Object3D(), new THREE.Object3D()];
 var normalAttack = 20;
 var randomRange = 3;
-var geometry = new THREE.BoxBufferGeometry(6, 6, 20.5);
+var geometry = new THREE.BoxBufferGeometry(6, 20.5, 6);
 var rayCaster = new THREE.Raycaster();
 
 module.exports = app;
