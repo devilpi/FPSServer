@@ -33,9 +33,17 @@ function makePlatform( jsonUrl, scene ) {
     scene.add(platform);
 }
 
+function makeCureCylinder() {
+    var cure = new THREE.Mesh(cureGeometry);
+    cure.name = 'cure';
+    cure.position.set(0, 50, 0);
+    return cure;
+}
+
 function initMap(gameRoom) {
     makePlatform('model/platform.json',
         rooms[gameRoom].scene);
+    rooms[gameRoom].scene.add(makeCureCylinder());
 }
 
 function getRandom(low, high) {
@@ -142,8 +150,9 @@ function updateShoot(socketID, position, direction) {
     for(var i = 0; i < intersects.length; i ++) {
         if(intersects[i].object.name == socketID) continue;
         shootID = intersects[i].object.name;
-        if(shootID == 'platform') {
+        if(shootID == 'platform' || shootID == 'cure') {
             ret = intersects[i].distance;
+            shootID = -1;
             break;
         }
         if(room.players[shootID].deadtime > 0) {
@@ -155,7 +164,7 @@ function updateShoot(socketID, position, direction) {
         break;
     }
     console.log(shootID);
-    if(shootID != 'platform' && shootID != -1) {
+    if(shootID != -1) {
         if(room.players[shootID].strongtime <= 0) {
             room.players[shootID].hp -= getNormalAttack();
             if(point.y - room.players[shootID].position.y >= BODYSIZE) {
@@ -195,11 +204,21 @@ function getNewPlayer(playerID) {
         id: playerID,
         hp: maxLife,
         kills: 0,
-        status: STOP,
         deadtime: 0,
         strongtime: STRONGTIME,
         position: bornPlace[0].position,
-        rotation: bornPlace[0].rotation
+        rotation: bornPlace[0].rotation,
+        cure: false,
+
+        playing_run_forward: false,
+        playing_run_backward: false,
+        playing_run_left: false,
+        playing_run_right: false,
+        playing_jump_forward: false,
+        playing_jump_backward: false,
+        playing_fire: false,
+        playing_reload: false,
+        playing_die: false
     };
 }
 
@@ -215,6 +234,10 @@ function getNormalAttack() {
     return normalAttack + getRandom(-randomRange, randomRange);
 }
 
+function getCureD(position) {
+    return position.x * position.x + position.y * position.y < CURERADIUS * CURERADIUS;
+}
+
 setInterval(function () {
     for(var room_id in rooms) {
         var room = rooms[room_id];
@@ -225,6 +248,13 @@ setInterval(function () {
                     player.deadtime -= 100;
                 } else if(player.strongtime > 0) {
                     player.strongtime -= 100;
+                }
+                if(player.deadtime <= 0 && getCureD(player.position)) {
+                    player.hp += HPPS / 10;
+                    if(player.hp > maxLife) player.hp = maxLife;
+                    player.cure = true;
+                } else {
+                    player.cure = false;
                 }
             }
             io.to('room-' + room_id).emit('syn-pos', room.players);
@@ -296,18 +326,19 @@ var bornPlace = [new THREE.Object3D(), new THREE.Object3D()];
 var normalAttack = 20;
 var randomRange = 3;
 var geometry = new THREE.BoxBufferGeometry(6, 20.5, 6);
+var cureGeometry = new THREE.CylinderBufferGeometry(20, 20, 100, 16);
 var rayCaster = new THREE.Raycaster();
 
 module.exports = app;
 
 // player status
-var STOP = 1;
-var RUN = 2;
 var DEADTIME = 5000; // ms
 var STRONGTIME = 1000; // ms
 var OFFSET = 10.25;
 var INFINITY = 1000;
-var BODYSIZE = 10.25;
+var BODYSIZE = 18;
+var CURERADIUS = 50;
+var HPPS = 10;
 
 Array.prototype.contains = function (val) {
     for (i in this) {
