@@ -277,7 +277,7 @@ setInterval(function () {
             io.to('room-' + room_id).emit('syn-pos', room.players);
         }
     }
-}, 100);
+}, 50);
 
 io.on('connection', function (socket) {
     console.log("new connection from: " + socket.id);
