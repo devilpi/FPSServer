@@ -20,22 +20,15 @@ function makePlatform( jsonUrl, scene ) {
 
     var model = loader.parse( jsonContent );
 
+    model.geometry.computeFaceNormals();
+
     var platform = new THREE.Mesh( model.geometry );
-    
-    var geometry = platform.geometry;
-    geometry.verticesNeedUpdate = true;
-    geometry.elementsNeedUpdate = true;
-    geometry.morphTargetsNeedUpdate = true;
-    geometry.uvsNeedUpdate = true;
-    geometry.normalsNeedUpdate = true;
-    geometry.tangentsNeedUpdate = true;
-    geometry.scale(10, 10, 10);
-    geometry.computeFaceNormals();
+
+    platform.scale.x = 10;
+    platform.scale.y = 10;
+    platform.scale.z = 10;
     
     platform.name = 'platform';
-    platform.matrixAutoUpdate = false;
-    platform.updateMatrix();
-    console.log(platform.geometry.vertices);
 
     scene.add(platform);
 }
@@ -146,9 +139,12 @@ function updateShoot(socketID, position, direction) {
     var shootID = -1;
     var ret = INFINITY;
     for(var i = 0; i < intersects.length; i ++) {
-        if(intersects[i].object.name == 'platform' ||
-            intersects[i].object.name == socketID) continue;
+        if(intersects[i].object.name == socketID) continue;
         shootID = intersects[i].object.name;
+        if(shootID == 'platform') {
+            ret = intersects[i].distance;
+            break;
+        }
         if(room.players[shootID].deadtime > 0) {
             shootID = -1;
             continue;
@@ -157,7 +153,7 @@ function updateShoot(socketID, position, direction) {
         break;
     }
     console.log(shootID);
-    if(shootID != -1) {
+    if(shootID != 'platform') {
         if(room.players[shootID].strongtime <= 0) {
             room.players[shootID].hp -= getNormalAttack();
         }
