@@ -262,12 +262,12 @@ setInterval(function () {
             for(var socketID in room.players) {
                 var player = room.players[socketID];
                 if(player.deadtime > 0) {
-                    player.deadtime -= 100;
+                    player.deadtime -= 50;
                 } else if(player.strongtime > 0) {
-                    player.strongtime -= 100;
+                    player.strongtime -= 50;
                 }
                 if(player.deadtime <= 0 && getCureD(player.position)) {
-                    player.hp += HPPS / 10;
+                    player.hp += HPPS / 20;
                     if(player.hp > maxLife) player.hp = maxLife;
                     player.cure = true;
                 } else {
