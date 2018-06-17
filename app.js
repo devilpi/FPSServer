@@ -199,7 +199,7 @@ function updateShoot(socketID, position, direction) {
             var playerID = room.players[shootID].id;
             room.players[shootID] = getNewPlayer(playerID);
             room.players[shootID].deadtime = DEADTIME;
-            updatePos(shootID, STOP, room.players[shootID].position, room.players[shootID].rotation);
+            updatePos(shootID, room.players[shootID].position, room.players[shootID].rotation);
         }
     }
     return ret;
