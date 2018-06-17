@@ -158,6 +158,8 @@ function updateShoot(socketID, position, direction) {
     if(shootID != 'platform' && shootID != -1) {
         if(room.players[shootID].strongtime <= 0) {
             room.players[shootID].hp -= getNormalAttack();
+            console.log('bullet: ' + point);
+            console.log('people: ' + room.players[shootID].position);
             if(point.y - room.players[shootID].position.y >= BODYSIZE) {
                 room.players[shootID].hp -= getNormalAttack();
             }
@@ -307,7 +309,7 @@ var DEADTIME = 5000; // ms
 var STRONGTIME = 1000; // ms
 var OFFSET = 10.25;
 var INFINITY = 1000;
-var BODYSIZE = 18;
+var BODYSIZE = 10.25;
 
 Array.prototype.contains = function (val) {
     for (i in this) {
