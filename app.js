@@ -138,6 +138,7 @@ function updateShoot(socketID, position, direction) {
     var intersects = rayCaster.intersectObjects(scene.children);
     var shootID = -1;
     var ret = INFINITY;
+    var point;
     for(var i = 0; i < intersects.length; i ++) {
         if(intersects[i].object.name == socketID) continue;
         shootID = intersects[i].object.name;
@@ -149,13 +150,17 @@ function updateShoot(socketID, position, direction) {
             shootID = -1;
             continue;
         }
+        point = intersects[i].point;
         ret = intersects[i].distance;
         break;
     }
     console.log(shootID);
-    if(shootID != 'platform') {
+    if(shootID != 'platform' && shootID != -1) {
         if(room.players[shootID].strongtime <= 0) {
             room.players[shootID].hp -= getNormalAttack();
+            if(point.y - room.players[shootID].position.y >= BODYSIZE) {
+                room.players[shootID].hp -= getNormalAttack();
+            }
         }
         if(room.players[shootID].hp <= 0) {
             room.players[socketID].kills ++;
@@ -302,6 +307,7 @@ var DEADTIME = 5000; // ms
 var STRONGTIME = 1000; // ms
 var OFFSET = 10.25;
 var INFINITY = 1000;
+var BODYSIZE = 18;
 
 Array.prototype.contains = function (val) {
     for (i in this) {
