@@ -19,14 +19,22 @@ function makePlatform( jsonUrl, scene ) {
     var jsonContent = JSON.parse(contents);
 
     var model = loader.parse( jsonContent );
-    
-    model.geometry.computeFaceNormals();
+    var geometry = model.geometry;
+    geometry.scale(10, 10, 10);
+    geometry.verticesNeedUpdate = true;
+    geometry.elementsNeedUpdate = true;
+    geometry.morphTargetsNeedUpdate = true;
+    geometry.uvsNeedUpdate = true;
+    geometry.normalsNeedUpdate = true;
+    geometry.tangentsNeedUpdate = true;
 
-    model.geometry.scale(10, 10, 10);
+    geometry.computeFaceNormals();
 
-    var platform = new THREE.Mesh( model.geometry );
+    var platform = new THREE.Mesh( geometry );
 
     platform.name = 'platform';
+    platform.matrixAutoUpdate = false;
+    platform.updateMatrix();
 
     scene.add(platform);
 }
