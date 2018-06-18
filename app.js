@@ -151,7 +151,7 @@ function updatePos(socketID, position, rotation) {
     if(typeof player2room[socketID] == 'undefined') return;
     var room = rooms[player2room[socketID]];
     if(position.y <= DEADLINE) {
-        if(room.players[socketID].deadtime > 0) return;
+        if(room.players[socketID].deadtime > 0 || room.players[socketID].strongtime > 0) return;
         room.players[socketID] = getNewPlayer(room.players[socketID].id);
         room.players[socketID].deadtime = DEADTIME;
         room.players[socketID].hp = 0;
