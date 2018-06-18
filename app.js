@@ -2,8 +2,19 @@ var app = require('express')();
 var server = require('http').Server(app);
 var io = require('socket.io')(server);
 var fs = require('fs');
+var mysql = require('mysql');
 
 server.listen(3000);
+
+/*
+var connection = mysql.createConnection({
+    host     : '127.0.0.1',
+    user     : 'root',
+    password : 'root',
+    database : 'secure_chat'
+});
+connection.connect();
+*/
 
 var THREE = require('three');
 
@@ -118,13 +129,34 @@ function removeRoom(roomID) {
     }
 }
 
+function writeData(socketID, player) {
+    /*
+    connection.query('SELECT * FROM users', function (error, results, fields) {
+        if (error) throw error;
+        console.log('The solution is: ', results[0]);
+    });
+    */
+}
+
 function quitPlayer(socketID) {
+    var room_id = player2room[socketID];
+    if(typeof room_id != 'undefined') {
+        var player = rooms[room_id].players[socketID];
+        writeData(socketID, player);
+    }
     removePlayer(socketID);
 }
 
 function updatePos(socketID, position, rotation) {
     if(typeof player2room[socketID] == 'undefined') return;
     var room = rooms[player2room[socketID]];
+    if(position.y <= DEADLINE) {
+        room.players[socketID] = getNewPlayer(room.players[socketID].id);
+        room.players[socketID].deadtime = DEADTIME;
+        room.players[socketID].hp = 0;
+        updatePos(socketID, room.players[socketID].position, room.players[socketID].rotation);
+        return;
+    }
     room.players[socketID].position = position;
     room.players[socketID].rotation = rotation;
     player2object[socketID].position.set(position.x, position.y + OFFSET, position.z);
@@ -199,6 +231,7 @@ function updateShoot(socketID, position, direction) {
             var playerID = room.players[shootID].id;
             room.players[shootID] = getNewPlayer(playerID);
             room.players[shootID].deadtime = DEADTIME;
+            room.players[shootID].hp = 0;
             updatePos(shootID, room.players[shootID].position, room.players[shootID].rotation);
         }
     }
@@ -263,6 +296,9 @@ setInterval(function () {
                 var player = room.players[socketID];
                 if(player.deadtime > 0) {
                     player.deadtime -= 50;
+                    if(player.deadtime <= 0) {
+                        player.hp = maxLife;
+                    }
                 } else if(player.strongtime > 0) {
                     player.strongtime -= 50;
                 }
@@ -356,13 +392,14 @@ var rayCaster = new THREE.Raycaster();
 module.exports = app;
 
 // player status
-var DEADTIME = 5000; // ms
+var DEADTIME = 2900; // ms
 var STRONGTIME = 1000; // ms
 var OFFSET = 10.25;
 var INFINITY = 1000;
 var BODYSIZE = 18;
 var CURERADIUS = 50;
 var HPPS = 10;
+var DEADLINE = -500;
 
 Array.prototype.contains = function (val) {
     for (i in this) {
