@@ -294,6 +294,7 @@ setInterval(function () {
         if(room.curNum > 0) {
             for(var socketID in room.players) {
                 var player = room.players[socketID];
+                if(player.deadtime > 0) console.log(player.deadtime);
                 if(player.deadtime > 0) {
                     player.deadtime -= 50;
                     if(player.deadtime <= 0) {
