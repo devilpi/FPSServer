@@ -152,10 +152,7 @@ function updatePos(socketID, position, rotation) {
     var room = rooms[player2room[socketID]];
     if(position.y <= DEADLINE) {
         if(room.players[socketID].deadtime > 0 || room.players[socketID].strongtime > 0) return;
-        room.players[socketID] = getNewPlayer(room.players[socketID].id);
         room.players[socketID].deadtime = DEADTIME;
-        room.players[socketID].hp = 0;
-        updatePos(socketID, room.players[socketID].position, room.players[socketID].rotation);
         return;
     }
     room.players[socketID].position = position;
@@ -229,11 +226,7 @@ function updateShoot(socketID, position, direction) {
                 room.players[socketID].hp = maxLife;
             }
             
-            var playerID = room.players[shootID].id;
-            room.players[shootID] = getNewPlayer(playerID);
             room.players[shootID].deadtime = DEADTIME;
-            room.players[shootID].hp = 0;
-            updatePos(shootID, room.players[shootID].position, room.players[shootID].rotation);
         }
     }
     return ret;
@@ -299,7 +292,9 @@ setInterval(function () {
                     console.log(player.deadtime);
                     player.deadtime -= 50;
                     if(player.deadtime <= 0) {
-                        player.hp = maxLife;
+                        room.players[socketID] = getNewPlayer(player.id);
+                        player = room.players[socketID];
+                        updatePos(socketID, player.position, player.rotation);
                     }
                 } else if(player.strongtime > 0) {
                     player.strongtime -= 50;
