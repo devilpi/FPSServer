@@ -392,7 +392,7 @@ var rayCaster = new THREE.Raycaster();
 module.exports = app;
 
 // player status
-var DEADTIME = 2900; // ms
+var DEADTIME = 1000; // ms
 var STRONGTIME = 1000; // ms
 var OFFSET = 10.25;
 var INFINITY = 1000;
