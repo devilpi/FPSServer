@@ -47,7 +47,7 @@ function makePlatform( jsonUrl, scene ) {
 function makeCureCylinder() {
     var cure = new THREE.Mesh(cureGeometry);
     cure.name = 'cure';
-    cure.position.set(0, 50, 0);
+    cure.position.set(0, 47, 0);
     return cure;
 }
 
@@ -64,6 +64,7 @@ function getRandom(low, high) {
 }
 
 function initRoom(gameRoom) {
+    console.log('init room: ', gameRoom);
     rooms[gameRoom] = {
         players: {},
         curNum: 0,
@@ -97,7 +98,7 @@ function addPlayer(socket, socketID, playerID, gameRoom) {
         return "房间已满"
     }
 
-    rooms[gameRoom].players[socketID] = getNewPlayer(playerID);
+    rooms[gameRoom].players[socketID] = getNewPlayer(playerID, 0, 0, maxLife);
 
 
     initPlayer(gameRoom, socketID);
@@ -153,6 +154,8 @@ function updatePos(socketID, position, rotation) {
     if(position.y <= DEADLINE) {
         if(room.players[socketID].deadtime > 0 || room.players[socketID].strongtime > 0) return;
         room.players[socketID].deadtime = DEADTIME;
+        room.players[socketID].hp = 0;
+        room.players[socketID].score = 0;
         return;
     }
     room.players[socketID].position = position;
@@ -179,8 +182,18 @@ function updateStatus(socketID, run_forward,
     room.players[socketID].playing_die = die;
 }
 
+function updatePlayerMax(player) {
+    if(player.score > player.maxScore) {
+        player.maxScore = player.score;
+    }
+    if(player.kills > player.maxKills) {
+        player.maxKills = player.kills;
+    }
+}
+
 function updateShoot(socketID, position, direction) {
     var room = rooms[player2room[socketID]];
+    if(typeof room == 'undefined') return;
     var scene = room.scene;
     var pos = new THREE.Vector3(position.x, position.y, position.z);
     var dir = new THREE.Vector3(direction.x, direction.y, direction.z);
@@ -213,21 +226,27 @@ function updateShoot(socketID, position, direction) {
     console.log(shootID);
     if(shootID != -1) {
         if(room.players[shootID].strongtime <= 0) {
-            room.players[shootID].hp -= getNormalAttack();
+            var hurt = getNormalAttack();
             if(point.y - room.players[shootID].position.y >= BODYSIZE) {
                 console.log('head shoot');
-                room.players[shootID].hp -= getNormalAttack();
+                hurt *= 2;
             }
+            room.players[shootID].hp -= hurt;
+            room.players[socketID].score += hurt;
         }
+        
         if(room.players[shootID].hp <= 0) {
-            room.players[socketID].kills ++;
+            room.players[socketID].score += room.players[shootID].hp + KILLSCORE;
+            room.players[socketID].hpMax += killBonus;
             room.players[socketID].hp += killBonus;
-            if(room.players[socketID].hp > maxLife) {
-                room.players[socketID].hp = maxLife;
-            }
+            room.players[socketID].kills ++;
             
             room.players[shootID].deadtime = DEADTIME;
+            room.players[shootID].hp = 0;
+            room.players[shootID].score = 0;
         }
+        
+        updatePlayerMax(room.players[socketID]);
     }
     return ret;
 }
@@ -243,11 +262,15 @@ function addRoom(gameRoom) {
     return "房间已存在";
 }
 
-function getNewPlayer(playerID) {
+function getNewPlayer(playerID, maxScore, maxKill, hpMax) {
     return {
         id: playerID,
-        hp: maxLife,
+        hp: hpMax,
+        score: 0,
+        hpMax: hpMax,
+        maxScore: maxScore,
         kills: 0,
+        maxKills: maxKill,
         deadtime: 0,
         strongtime: STRONGTIME,
         position: bornPlace[0].position,
@@ -279,7 +302,7 @@ function getNormalAttack() {
 }
 
 function getCureD(position) {
-    return position.x * position.x + position.y * position.y < CURERADIUS * CURERADIUS;
+    return position.x * position.x + position.z * position.z < CURERADIUS * CURERADIUS;
 }
 
 setInterval(function () {
@@ -292,7 +315,7 @@ setInterval(function () {
                     console.log(player.deadtime);
                     player.deadtime -= 50;
                     if(player.deadtime <= 0) {
-                        room.players[socketID] = getNewPlayer(player.id);
+                        room.players[socketID] = getNewPlayer(player.id, player.maxScore, player.maxKills, maxLife);
                         player = room.players[socketID];
                         updatePos(socketID, player.position, player.rotation);
                     }
@@ -301,7 +324,7 @@ setInterval(function () {
                 }
                 if(player.deadtime <= 0 && getCureD(player.position)) {
                     player.hp += HPPS / 20;
-                    if(player.hp > maxLife) player.hp = maxLife;
+                    if(player.hp > player.hpMax) player.hp = player.hpMax;
                     player.cure = true;
                 } else {
                     player.cure = false;
@@ -376,27 +399,28 @@ io.on('connection', function (socket) {
 });
 
 // game configure
-var maxPlayer = 8;
+var maxPlayer = 4;
 var maxLife = 100;
-var killBonus = 30;
+var killBonus = 10;
 var bornPlace = [new THREE.Object3D(), new THREE.Object3D()];
 var normalAttack = 20;
 var randomRange = 3;
 var geometry = new THREE.BoxBufferGeometry(6, 20.5, 6);
-var cureGeometry = new THREE.CylinderBufferGeometry(20, 20, 100, 16);
+var cureGeometry = new THREE.CylinderBufferGeometry(23, 29, 94, 32);
 var rayCaster = new THREE.Raycaster();
 
 module.exports = app;
 
 // player status
 var DEADTIME = 3000; // ms
-var STRONGTIME = 1000; // ms
+var STRONGTIME = 3000; // ms
 var OFFSET = 10.25;
 var INFINITY = 1000;
 var BODYSIZE = 18;
-var CURERADIUS = 50;
+var CURERADIUS = 70;
 var HPPS = 10;
 var DEADLINE = -500;
+var KILLSCORE = 20;
 
 Array.prototype.contains = function (val) {
     for (i in this) {
