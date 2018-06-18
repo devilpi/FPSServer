@@ -296,6 +296,7 @@ setInterval(function () {
             for(var socketID in room.players) {
                 var player = room.players[socketID];
                 if(player.deadtime > 0) {
+                    console.log(player.deadtime);
                     player.deadtime -= 50;
                     if(player.deadtime <= 0) {
                         player.hp = maxLife;
