@@ -408,7 +408,15 @@ io.on('connection', function (socket) {
 
     socket.on('join', function (socketID, playerID, room_id, fn) {
         console.log('join: ' + socketID + ' ' + room_id);
-        fn(addPlayer(socket, socketID, playerID, room_id));
+        var ret = addPlayer(socket, socketID, playerID, room_id);
+        if(ret) {
+            console.log('look ' + socketID);
+            io.to('room-' + room_id).emit('new-comer', socketID);
+            for(var id in rooms[room_id].players) {
+                if(id != socketID) socket.emit('new-comer', id);
+            }
+        }
+        fn(ret);
     });
 });
 
