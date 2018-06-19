@@ -400,6 +400,11 @@ io.on('connection', function (socket) {
             io.to('room-' + room_id).emit('new-message', rooms[room_id].players[socketID].id, msg);
         }
     });
+
+    socket.on('create', function (room_id, fn) {
+        console.log('create: ' + room_id);
+        fn(addRoom(room_id));
+    })
 });
 
 // game configure
