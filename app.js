@@ -402,6 +402,7 @@ io.on('connection', function (socket) {
 
     socket.on('create', function (room_id, fn) {
         console.log('create: ' + room_id);
+        console.log(fn);
         fn(addRoom(room_id));
     });
 
