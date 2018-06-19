@@ -369,6 +369,10 @@ io.on('connection', function (socket) {
      }
      });
      */
+    socket.on('quit-player', function (socketID) {
+        console.log('quit player: ' + socketID);
+        quitPlayer(socketID);
+    });
 
     socket.on('report-pos', function (socketID, run_forward,
         run_backward, run_left, run_right,
