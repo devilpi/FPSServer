@@ -95,17 +95,16 @@ function addPlayer(socket, socketID, playerID, gameRoom) {
     }
 
     if(rooms[gameRoom].curNum >= maxPlayer) {
-        return "房间已满"
+        return false;
     }
 
     rooms[gameRoom].players[socketID] = getNewPlayer(playerID, 0, 0, maxLife);
-
 
     initPlayer(gameRoom, socketID);
     
     socket.join('room-' + gameRoom);
 
-    return "添加成功";
+    return true;
 }
 
 function removePlayer(socketID) {
@@ -256,10 +255,10 @@ function addRoom(gameRoom) {
     
     if(typeof rooms[gameRoom] == 'undefined') {
         initRoom(gameRoom);
-        return "添加成功";
+        return true;
     }
 
-    return "房间已存在";
+    return false;
 }
 
 function getNewPlayer(playerID, maxScore, maxKill, hpMax) {
@@ -404,14 +403,19 @@ io.on('connection', function (socket) {
     socket.on('create', function (room_id, fn) {
         console.log('create: ' + room_id);
         fn(addRoom(room_id));
-    })
+    });
+
+    socket.on('join', function (socketID, playerID, room_id, fn) {
+        console.log('join: ' + socketID + ' ' + room_id);
+        fn(addPlayer(socket, socketID, playerID, room_id));
+    });
 });
 
 // game configure
 var maxPlayer = 4;
 var maxLife = 100;
 var killBonus = 10;
-var bornPlace = [new THREE.Object3D(), new THREE.Object3D()];
+var bornPlace = [new THREE.Object3D()];
 var normalAttack = 20;
 var randomRange = 3;
 var geometry = new THREE.BoxBufferGeometry(6, 20.5, 6);
